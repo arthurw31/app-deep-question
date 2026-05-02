@@ -1,0 +1,19 @@
+{
+  "name": "DeepConnect",
+  "short_name": "DeepConnect",
+  "description": "Flash cards pour des connexions profondes entre deux personnes",
+  "start_url": "/app-deep-question/",
+  "scope": "/app-deep-question/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

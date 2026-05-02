@@ -7,6 +7,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -203,6 +207,16 @@
       from { opacity: 0; transform: translateY(16px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+    @keyframes slideInFromRight {
+      from { opacity: 0; transform: translateX(48px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideInFromLeft {
+      from { opacity: 0; transform: translateX(-48px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .card.dir-next { animation: slideInFromRight 0.38s cubic-bezier(0.22,1,0.36,1) forwards; }
+    .card.dir-prev { animation: slideInFromLeft 0.38s cubic-bezier(0.22,1,0.36,1) forwards; }
 
     .card-level-tag {
       font-size: 0.62rem;
@@ -388,6 +402,126 @@
     }
     .btn-outline:hover { border-color: rgba(200,184,154,0.4); color: var(--text); }
 
+    /* Favorite button */
+    .fav-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .fav-btn svg { width: 15px; height: 15px; transition: fill 0.2s, color 0.2s; }
+    .fav-btn:hover { border-color: rgba(200,184,154,0.4); color: var(--accent); }
+    .fav-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .fav-btn.active svg { fill: var(--accent); }
+
+    /* Swipe hint */
+    .swipe-hint {
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 0.75rem;
+      opacity: 0.6;
+    }
+
+    /* ── FAVORITES SCREEN ── */
+    #screen-favorites { justify-content: flex-start; padding-top: 6rem; gap: 0; overflow-y: auto; }
+    .fav-header {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 1.8rem;
+    }
+    .fav-header h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.8rem;
+      font-weight: 300;
+      color: var(--text);
+    }
+    .fav-header h2 em { font-style: italic; color: var(--accent); }
+    .fav-count { font-size: 0.65rem; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; }
+    .fav-list {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding-bottom: 3rem;
+    }
+    .fav-item {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 1.2rem 1.4rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .fav-item-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.05rem;
+      font-weight: 300;
+      line-height: 1.4;
+      color: var(--text);
+      flex: 1;
+    }
+    .fav-item-meta {
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-top: 0.5rem;
+    }
+    .fav-remove {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0;
+      font-size: 1rem;
+      line-height: 1;
+      flex-shrink: 0;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+    .fav-remove:hover { opacity: 1; }
+    .fav-empty {
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-align: center;
+      padding: 3rem 0;
+    }
+    .fav-link {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .fav-link:hover { color: var(--accent); }
+    .fav-home-btn {
+      position: fixed;
+      top: 2.2rem;
+      left: 2.4rem;
+    }
+
     /* Noise texture overlay */
     body::after {
       content: '';
@@ -461,7 +595,12 @@
       <button class="level-btn" data-level="all" onclick="selectLevel(this)">Tout</button>
     </div>
 
-    <button class="start-btn" id="start-btn" onclick="startSession()">Commencer la session</button>
+    <div style="display:flex;gap:0.6rem;align-items:center;">
+      <button class="start-btn" id="start-btn" onclick="startSession()" style="flex:1;">Commencer la session</button>
+      <button class="fav-btn" id="home-fav-btn" onclick="showFavorites()" title="Mes favoris" style="width:48px;height:48px;">
+        <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M7.5 12.5S1.5 9 1.5 5a3 3 0 015.5-1.65A3 3 0 0113.5 5c0 4-6 7.5-6 7.5z"/></svg>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -517,8 +656,12 @@
       <button class="back-btn" id="back-btn" onclick="prevCard()">
         <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2L4 7l5 5"/></svg>
       </button>
+      <button class="fav-btn" id="fav-btn" onclick="toggleFavorite()" title="Ajouter aux favoris">
+        <svg viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M7.5 12.5S1.5 9 1.5 5a3 3 0 015.5-1.65A3 3 0 0113.5 5c0 4-6 7.5-6 7.5z"/></svg>
+      </button>
       <button class="next-btn" onclick="nextCard()">Question suivante</button>
     </div>
+    <div class="swipe-hint" id="swipe-hint">← glisse pour naviguer →</div>
   </div>
 </div>
 
@@ -529,8 +672,19 @@
   <div class="end-sub">Tu as traversé toutes les questions de cette session. La connexion se construit dans l'espace entre les réponses.</div>
   <div class="end-actions">
     <button class="btn-outline" onclick="restartShuffle()">Mélanger à nouveau</button>
+    <button class="btn-outline" onclick="showFavorites()">Mes favoris</button>
     <button class="start-btn" onclick="goHome()">Nouvelle session</button>
   </div>
+</div>
+
+<!-- ── FAVORITES ── -->
+<div class="screen hidden" id="screen-favorites">
+  <button class="home-link fav-home-btn" onclick="goHome()">← Accueil</button>
+  <div class="fav-header">
+    <h2>Mes <em>favoris</em></h2>
+    <span class="fav-count" id="fav-count"></span>
+  </div>
+  <div class="fav-list" id="fav-list"></div>
 </div>
 
 <script>
@@ -674,6 +828,9 @@
   let sessionCards = [];
   let currentIndex = 0;
   let credOpen = false;
+  let navDirection = 'next'; // 'next' | 'prev'
+  let favorites = JSON.parse(localStorage.getItem('dc-favorites') || '[]');
+  let swipeHintShown = localStorage.getItem('dc-swipe-hint-shown') === '1';
 
   // ── SELECTION ──────────────────────────────────────────────────────
   function selectSource(el) {
@@ -714,9 +871,13 @@
   function startSession() {
     sessionCards = buildCards();
     currentIndex = 0;
+    navDirection = 'next';
     if (!sessionCards.length) return;
     showScreen('card');
     renderCard();
+    renderFavoriteBtn();
+    const hint = document.getElementById('swipe-hint');
+    if (hint) hint.style.display = swipeHintShown ? 'none' : '';
   }
 
   function restartShuffle() {
@@ -734,6 +895,7 @@
   // ── NAVIGATION ────────────────────────────────────────────────────
   function nextCard() {
     closeCred();
+    navDirection = 'next';
     currentIndex++;
     if (currentIndex >= sessionCards.length) {
       showScreen('end');
@@ -745,6 +907,7 @@
   function prevCard() {
     if (currentIndex === 0) return;
     closeCred();
+    navDirection = 'prev';
     currentIndex--;
     renderCard();
   }
@@ -758,15 +921,22 @@
       : SOURCE_LABELS[selectedSource];
     document.getElementById('meta-counter').textContent = `${currentIndex + 1} / ${sessionCards.length}`;
     document.getElementById('back-btn').style.opacity = currentIndex === 0 ? '0.3' : '1';
+    renderFavoriteBtn();
 
     const pct = ((currentIndex + 1) / sessionCards.length) * 100;
     document.getElementById('progress-fill').style.width = pct + '%';
 
-    // Re-trigger animation
+    // Trigger direction-aware slide animation
     const card = document.getElementById('current-card');
-    card.style.animation = 'none';
-    card.offsetHeight;
-    card.style.animation = '';
+    card.classList.remove('dir-next', 'dir-prev');
+    card.offsetHeight; // reflow
+    card.classList.add(navDirection === 'next' ? 'dir-next' : 'dir-prev');
+
+    // Hide swipe hint after first manual swipe or keyboard nav
+    if (swipeHintShown) {
+      const hint = document.getElementById('swipe-hint');
+      if (hint) hint.style.display = 'none';
+    }
   }
 
   function getSourceLabel(q) {
@@ -796,6 +966,93 @@
     document.getElementById('screen-' + name).classList.remove('hidden');
   }
 
+  // ── FAVORITES ────────────────────────────────────────────────────
+  function saveFavorites() {
+    localStorage.setItem('dc-favorites', JSON.stringify(favorites));
+  }
+
+  function isFavorite(q) {
+    return favorites.some(f => f.text === q.text);
+  }
+
+  function toggleFavorite() {
+    const q = sessionCards[currentIndex];
+    const idx = favorites.findIndex(f => f.text === q.text);
+    if (idx === -1) {
+      favorites.push({ ...q, source: selectedSource });
+    } else {
+      favorites.splice(idx, 1);
+    }
+    saveFavorites();
+    renderFavoriteBtn();
+  }
+
+  function renderFavoriteBtn() {
+    if (!sessionCards.length) return;
+    const q = sessionCards[currentIndex];
+    const btn = document.getElementById('fav-btn');
+    btn.classList.toggle('active', isFavorite(q));
+  }
+
+  function showFavorites() {
+    showScreen('favorites');
+    renderFavoritesList();
+  }
+
+  function renderFavoritesList() {
+    const list = document.getElementById('fav-list');
+    const count = document.getElementById('fav-count');
+    count.textContent = favorites.length ? `${favorites.length} question${favorites.length > 1 ? 's' : ''}` : '';
+    if (!favorites.length) {
+      list.innerHTML = '<div class="fav-empty">Aucun favori pour le moment.<br>Appuyez sur ♡ lors d\'une session.</div>';
+      return;
+    }
+    list.innerHTML = favorites.map((q, i) => `
+      <div class="fav-item">
+        <div style="flex:1;">
+          <div class="fav-item-text">${q.text}</div>
+          <div class="fav-item-meta">${SOURCE_LABELS[q.source] || q.source} · ${LEVEL_LABELS[q.level]}</div>
+        </div>
+        <button class="fav-remove" onclick="removeFavorite(${i})" title="Retirer">×</button>
+      </div>
+    `).join('');
+  }
+
+  function removeFavorite(i) {
+    favorites.splice(i, 1);
+    saveFavorites();
+    renderFavoritesList();
+    // update heart button count badge if visible
+    updateHomeFavBtn();
+  }
+
+  function updateHomeFavBtn() {
+    const btn = document.getElementById('home-fav-btn');
+    if (btn) btn.classList.toggle('active', favorites.length > 0);
+  }
+
+  // ── SWIPE (TOUCH) ────────────────────────────────────────────────
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  document.getElementById('screen-card').addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.getElementById('screen-card').addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 44) {
+      if (!swipeHintShown) {
+        swipeHintShown = true;
+        localStorage.setItem('dc-swipe-hint-shown', '1');
+      }
+      if (dx < 0) nextCard();
+      else prevCard();
+    }
+  }, { passive: true });
+
   // ── KEYBOARD ─────────────────────────────────────────────────────
   document.addEventListener('keydown', e => {
     const card = !document.getElementById('screen-card').classList.contains('hidden');
@@ -803,6 +1060,14 @@
     if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextCard(); }
     if (e.key === 'ArrowLeft') { e.preventDefault(); prevCard(); }
   });
+
+  // ── INIT ─────────────────────────────────────────────────────────
+  updateHomeFavBtn();
+
+  // ── PWA ──────────────────────────────────────────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
 </script>
 </body>
 </html>
