@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0a0a0a"/>
+  <path d="M256 380 C256 380 140 310 140 220 a76 76 0 0 1 116 -64.6 A76 76 0 0 1 372 220 C372 310 256 380 256 380z"
+    fill="none" stroke="#c8b89a" stroke-width="18" stroke-linejoin="round"/>
+  <text x="256" y="480" font-family="serif" font-size="40" fill="#c8b89a"
+    text-anchor="middle" letter-spacing="8" font-weight="300">DEEP</text>
+</svg>
