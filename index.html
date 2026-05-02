@@ -189,15 +189,17 @@
     /* Meta */
     .card-meta {
       position: fixed;
-      top: 2rem;
-      right: 2.4rem;
-      font-size: 0.65rem;
+      top: 2.2rem;
+      right: 2rem;
+      font-size: 0.62rem;
       letter-spacing: 0.14em;
       text-transform: uppercase;
       color: var(--muted);
       text-align: right;
+      line-height: 1.5;
+      max-width: 50%;
     }
-    .card-meta .source-label { color: var(--accent); display: block; margin-bottom: 0.2rem; }
+    .card-meta .source-label { color: var(--accent); display: block; margin-bottom: 0.15rem; opacity: 0.85; }
 
     /* The card */
     .card-stage {
@@ -390,14 +392,15 @@
       border: none;
       color: var(--muted);
       font-family: 'DM Sans', sans-serif;
-      font-size: 0.68rem;
-      letter-spacing: 0.12em;
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
       cursor: pointer;
       transition: color 0.2s;
       position: fixed;
       top: 2.2rem;
-      left: 2.4rem;
+      left: 2rem;
+      padding: 0;
     }
     .home-link:hover { color: var(--text); }
 
@@ -592,8 +595,6 @@
   </style>
 </head>
 <body>
-
-<div class="logo" id="brand-fixed">DeepConnect</div>
 
 <!-- ── HOME ── -->
 <div class="screen" id="screen-home">
@@ -859,9 +860,9 @@
   };
 
   const SOURCE_LABELS = {
-    aron: "36 Questions · Arthur Aron",
-    wnrs: "We're Not Really Strangers",
-    perel: "Where Should We Begin · Esther Perel",
+    aron: "Arthur Aron",
+    wnrs: "WNRS",
+    perel: "Esther Perel",
     and: "The And",
     deep: "Let's Get Deep",
     all: "Mix complet",
@@ -1011,9 +1012,6 @@
   function showScreen(name) {
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
     document.getElementById('screen-' + name).classList.remove('hidden');
-    // Hide top fixed brand on home (the big brand replaces it)
-    const fixed = document.getElementById('brand-fixed');
-    if (fixed) fixed.style.display = name === 'home' ? 'none' : '';
   }
 
   // ── FAVORITES ────────────────────────────────────────────────────
@@ -1113,7 +1111,6 @@
 
   // ── INIT ─────────────────────────────────────────────────────────
   updateHomeFavBtn();
-  document.getElementById('brand-fixed').style.display = 'none'; // hidden on home
 
   // ── PWA ──────────────────────────────────────────────────────────
   if ('serviceWorker' in navigator) {
