@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeepConnect</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --border: rgba(255,255,255,0.07);
+      --text: #f0ede8;
+      --muted: rgba(240,237,232,0.38);
+      --accent: #c8b89a;
+      --accent-dim: rgba(200,184,154,0.12);
+      --radius: 2px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ── SCREEN SYSTEM ── */
+    .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; transition: opacity 0.6s ease, transform 0.6s ease; }
+    .screen.hidden { opacity: 0; pointer-events: none; transform: translateY(12px); }
+
+    /* ── LOGO ── */
+    .logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 300;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--accent);
+      position: fixed;
+      top: 2.4rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+
+    /* ─────────────────────────────────────
+       HOME SCREEN
+    ───────────────────────────────────── */
+    #screen-home { gap: 3.5rem; }
+
+    .home-headline {
+      text-align: center;
+    }
+    .home-headline h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.8rem, 6vw, 4.2rem);
+      font-weight: 300;
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .home-headline h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+    .home-headline p {
+      margin-top: 1rem;
+      font-size: 0.82rem;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* Source grid */
+    .source-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+      width: 100%;
+      max-width: 520px;
+    }
+    .source-card {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 1.1rem 0.8rem;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      text-align: center;
+      position: relative;
+    }
+    .source-card:hover { border-color: rgba(200,184,154,0.3); background: rgba(200,184,154,0.04); }
+    .source-card.active { border-color: var(--accent); background: var(--accent-dim); }
+    .source-card .source-name {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text);
+      font-weight: 400;
+    }
+    .source-card .source-count {
+      margin-top: 0.3rem;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+    }
+    .source-card.active .source-name { color: var(--accent); }
+
+    /* Level selector */
+    .level-row {
+      display: flex;
+      gap: 0.5rem;
+      width: 100%;
+      max-width: 520px;
+    }
+    .level-btn {
+      flex: 1;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      padding: 0.75rem 0.5rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    .level-btn:hover { border-color: rgba(200,184,154,0.3); color: var(--text); }
+    .level-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+    .start-btn {
+      background: var(--accent);
+      color: #0a0a0a;
+      border: none;
+      padding: 1rem 3rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .start-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .start-btn:active { transform: translateY(0); }
+    .start-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+    /* ─────────────────────────────────────
+       CARD SCREEN
+    ───────────────────────────────────── */
+    #screen-card { gap: 0; justify-content: flex-end; padding-bottom: 3rem; }
+
+    /* Progress bar */
+    .progress-bar-wrap {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: rgba(255,255,255,0.04);
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.5s ease;
+    }
+
+    /* Meta */
+    .card-meta {
+      position: fixed;
+      top: 2rem;
+      right: 2.4rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: right;
+    }
+    .card-meta .source-label { color: var(--accent); display: block; margin-bottom: 0.2rem; }
+
+    /* The card */
+    .card-stage {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .card {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 3rem 2.8rem 2.4rem;
+      position: relative;
+      animation: cardIn 0.5s ease forwards;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-level-tag {
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .card-level-tag::before {
+      content: '';
+      display: inline-block;
+      width: 18px;
+      height: 1px;
+      background: var(--accent);
+    }
+
+    .card-question {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+      font-weight: 300;
+      line-height: 1.35;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    /* CRED hint */
+    .cred-toggle {
+      margin-top: 2rem;
+      padding-top: 1.6rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .cred-toggle span {
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .cred-toggle .cred-icon {
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s, border-color 0.2s;
+    }
+    .cred-toggle .cred-icon svg { width: 8px; height: 8px; }
+    .cred-toggle:hover .cred-icon { border-color: var(--accent); }
+    .cred-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+    }
+    .cred-panel.open { max-height: 300px; }
+    .cred-inner {
+      padding-top: 1.2rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+    .cred-item {
+      background: rgba(200,184,154,0.04);
+      border: 1px solid rgba(200,184,154,0.1);
+      padding: 0.8rem;
+    }
+    .cred-item .cred-letter {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      color: var(--accent);
+      margin-bottom: 0.2rem;
+    }
+    .cred-item .cred-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .cred-item .cred-desc {
+      font-size: 0.72rem;
+      color: rgba(240,237,232,0.6);
+      margin-top: 0.25rem;
+      line-height: 1.4;
+    }
+
+    /* Actions */
+    .card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 1.2rem;
+    }
+
+    .back-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+    .back-btn:hover { border-color: rgba(200,184,154,0.4); color: var(--text); }
+    .back-btn svg { width: 14px; height: 14px; }
+
+    .next-btn {
+      background: var(--accent);
+      color: #0a0a0a;
+      border: none;
+      padding: 0.85rem 2.2rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .next-btn:hover { opacity: 0.85; }
+
+    .home-link {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.2s;
+      position: fixed;
+      top: 2.2rem;
+      left: 2.4rem;
+    }
+    .home-link:hover { color: var(--text); }
+
+    /* ─────────────────────────────────────
+       END SCREEN
+    ───────────────────────────────────── */
+    #screen-end { gap: 2rem; text-align: center; }
+    .end-icon {
+      width: 48px; height: 1px;
+      background: var(--accent);
+      margin: 0 auto;
+    }
+    .end-headline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 300;
+      line-height: 1.2;
+    }
+    .end-headline em { font-style: italic; color: var(--accent); }
+    .end-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      max-width: 320px;
+      line-height: 1.7;
+    }
+    .end-actions { display: flex; gap: 0.8rem; }
+    .btn-outline {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.85rem 1.8rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-outline:hover { border-color: rgba(200,184,154,0.4); color: var(--text); }
+
+    /* Noise texture overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0.4;
+    }
+
+    /* Subtle grid lines */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .screen { z-index: 1; }
+  </style>
+</head>
+<body>
+
+<div class="logo">DeepConnect</div>
+
+<!-- ── HOME ── -->
+<div class="screen" id="screen-home">
+  <div class="home-headline">
+    <h1>Choisir la <em>source</em><br>et la profondeur</h1>
+    <p>Flash cards · Connexion progressive</p>
+  </div>
+
+  <div style="width:100%;max-width:520px;display:flex;flex-direction:column;gap:1rem;">
+    <div style="font-size:0.62rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:0.2rem;">Source</div>
+    <div class="source-grid">
+      <div class="source-card active" data-source="aron" onclick="selectSource(this)">
+        <div class="source-name">Aron</div>
+        <div class="source-count">36 questions</div>
+      </div>
+      <div class="source-card" data-source="wnrs" onclick="selectSource(this)">
+        <div class="source-name">WNRS</div>
+        <div class="source-count">21 questions</div>
+      </div>
+      <div class="source-card" data-source="perel" onclick="selectSource(this)">
+        <div class="source-name">E. Perel</div>
+        <div class="source-count">19 questions</div>
+      </div>
+      <div class="source-card" data-source="and" onclick="selectSource(this)">
+        <div class="source-name">The And</div>
+        <div class="source-count">19 questions</div>
+      </div>
+      <div class="source-card" data-source="deep" onclick="selectSource(this)">
+        <div class="source-name">Let's Get Deep</div>
+        <div class="source-count">21 questions</div>
+      </div>
+      <div class="source-card" data-source="all" onclick="selectSource(this)">
+        <div class="source-name">Tout</div>
+        <div class="source-count">Mix complet</div>
+      </div>
+    </div>
+
+    <div style="font-size:0.62rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-top:0.8rem;margin-bottom:0.2rem;">Niveau de profondeur</div>
+    <div class="level-row">
+      <button class="level-btn active" data-level="1" onclick="selectLevel(this)">Surface</button>
+      <button class="level-btn" data-level="2" onclick="selectLevel(this)">Profond</button>
+      <button class="level-btn" data-level="3" onclick="selectLevel(this)">Vulnérable</button>
+      <button class="level-btn" data-level="all" onclick="selectLevel(this)">Tout</button>
+    </div>
+
+    <button class="start-btn" id="start-btn" onclick="startSession()">Commencer la session</button>
+  </div>
+</div>
+
+<!-- ── CARD ── -->
+<div class="screen hidden" id="screen-card">
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill"></div></div>
+  <button class="home-link" onclick="goHome()">← Retour</button>
+  <div class="card-meta">
+    <span class="source-label" id="meta-source"></span>
+    <span id="meta-counter"></span>
+  </div>
+
+  <div class="card-stage">
+    <div class="card" id="current-card">
+      <div class="card-level-tag" id="card-level-tag"></div>
+      <div class="card-question" id="card-question"></div>
+
+      <div class="cred-toggle" onclick="toggleCred()">
+        <span>Framework CRED</span>
+        <div class="cred-icon" id="cred-icon">
+          <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M2 4l3 3 3-3"/>
+          </svg>
+        </div>
+      </div>
+      <div class="cred-panel" id="cred-panel">
+        <div class="cred-inner">
+          <div class="cred-item">
+            <div class="cred-letter">C</div>
+            <div class="cred-label">Contexte</div>
+            <div class="cred-desc">Pose le décor en 1 phrase</div>
+          </div>
+          <div class="cred-item">
+            <div class="cred-letter">R</div>
+            <div class="cred-label">Réaction</div>
+            <div class="cred-desc">Ce que tu as ressenti à ce moment</div>
+          </div>
+          <div class="cred-item">
+            <div class="cred-letter">E</div>
+            <div class="cred-label">Événement</div>
+            <div class="cred-desc">Ce qui s'est passé concrètement</div>
+          </div>
+          <div class="cred-item">
+            <div class="cred-letter">D</div>
+            <div class="cred-label">Déclic</div>
+            <div class="cred-desc">Ce que ça t'a appris ou changé</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-actions">
+      <button class="back-btn" id="back-btn" onclick="prevCard()">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 2L4 7l5 5"/></svg>
+      </button>
+      <button class="next-btn" onclick="nextCard()">Question suivante</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── END ── -->
+<div class="screen hidden" id="screen-end">
+  <div class="end-icon"></div>
+  <div class="end-headline">Session<br><em>terminée.</em></div>
+  <div class="end-sub">Tu as traversé toutes les questions de cette session. La connexion se construit dans l'espace entre les réponses.</div>
+  <div class="end-actions">
+    <button class="btn-outline" onclick="restartShuffle()">Mélanger à nouveau</button>
+    <button class="start-btn" onclick="goHome()">Nouvelle session</button>
+  </div>
+</div>
+
+<script>
+  // ── DATA ──────────────────────────────────────────────────────────
+  const QUESTIONS = {
+    aron: [
+      { level: 1, text: "Si tu pouvais inviter n'importe qui à dîner, qui ce serait ?" },
+      { level: 1, text: "Tu voudrais être célèbre ? Pour quoi ?" },
+      { level: 1, text: "Avant d'appeler quelqu'un, tu répètes ce que tu vas dire ? Pourquoi ?" },
+      { level: 1, text: "C'est quoi pour toi une journée parfaite ?" },
+      { level: 1, text: "Quand t'as chanté pour la dernière fois pour toi-même ? Et pour quelqu'un ?" },
+      { level: 1, text: "Si tu pouvais vivre jusqu'à 90 ans avec le corps ou l'esprit de tes 30 ans, tu choisirais quoi ?" },
+      { level: 1, text: "T'as un pressentiment secret sur comment tu vas mourir ?" },
+      { level: 1, text: "Cite 3 choses qu'on a en commun toi et moi." },
+      { level: 1, text: "C'est quoi ce pour quoi tu es le plus reconnaissant dans ta vie ?" },
+      { level: 1, text: "Si tu pouvais changer quelque chose dans ta façon d'avoir été élevé, ce serait quoi ?" },
+      { level: 1, text: "Si tu pouvais te réveiller demain avec une qualité ou capacité en plus, laquelle ?" },
+      { level: 2, text: "Si une boule de cristal pouvait te dire la vérité sur toi, ta vie, l'avenir — tu voudrais savoir quoi ?" },
+      { level: 2, text: "Y'a quelque chose que tu rêves de faire depuis longtemps ? Pourquoi t'as pas encore commencé ?" },
+      { level: 2, text: "C'est quoi la plus grande réussite de ta vie ?" },
+      { level: 2, text: "Qu'est-ce que tu valorises le plus dans une amitié ?" },
+      { level: 2, text: "C'est quoi ton souvenir le plus précieux ?" },
+      { level: 2, text: "C'est quoi ton souvenir le plus difficile ?" },
+      { level: 2, text: "Si tu savais que tu vas mourir dans un an, tu changerais quoi dans ta façon de vivre ?" },
+      { level: 2, text: "Quel rôle jouent l'amour et l'affection dans ta vie ?" },
+      { level: 2, text: "Ta relation avec ta mère, tu la décrirais comment ?" },
+      { level: 3, text: "Si tu devais devenir proche de moi, dis-moi ce que je devrais savoir." },
+      { level: 3, text: "Dis à l'autre ce que tu aimes chez lui/elle — quelque chose que tu dirais pas à un inconnu." },
+      { level: 3, text: "Partage un moment embarrassant de ta vie." },
+      { level: 3, text: "Quand t'as pleuré pour la dernière fois devant quelqu'un ? Et seul ?" },
+      { level: 3, text: "Y'a quelque chose que tu trouves trop sérieux pour en plaisanter ?" },
+      { level: 3, text: "Si tu devais mourir ce soir sans pouvoir parler à personne, tu regretterais de pas avoir dit quoi à qui ?" },
+      { level: 3, text: "Ta maison prend feu. Après avoir sauvé les gens et animaux — tu sauves quoi en dernier ?" },
+      { level: 3, text: "Parmi tous tes proches, la mort de qui te dévasterait le plus ? Pourquoi ?" },
+      { level: 3, text: "Partage un problème personnel et demande conseil à l'autre — comment il/elle gèrerait ça ?" },
+    ],
+    wnrs: [
+      { level: 1, text: "Quel mot tu utiliserais pour me décrire à quelqu'un qui me connaît pas ?" },
+      { level: 1, text: "Est-ce que tu penses que je suis une personne heureuse ?" },
+      { level: 1, text: "Est-ce que je te rappelle quelqu'un ? Qui ?" },
+      { level: 1, text: "Quelle est la première chose que t'as remarquée chez moi ?" },
+      { level: 1, text: "Qu'est-ce que t'as pensé de moi quand on s'est rencontrés ?" },
+      { level: 1, text: "Est-ce que tu penses qu'on aurait pu se rencontrer dans d'autres circonstances ?" },
+      { level: 2, text: "C'est quoi une chose qu'on a en commun qu'on n'a jamais dite ?" },
+      { level: 2, text: "Comment tu vas, vraiment ?" },
+      { level: 2, text: "C'est quoi quelque chose dont tu parles jamais mais que tu voudrais partager ?" },
+      { level: 2, text: "Y'a un moment avec moi qui t'a marqué ?" },
+      { level: 2, text: "Comment nos personnalités se complètent ?" },
+      { level: 2, text: "C'est quoi quelque chose que tu aimerais qu'on fasse ensemble ?" },
+      { level: 2, text: "Qu'est-ce qui t'empêche d'être complètement toi-même avec moi ?" },
+      { level: 3, text: "Y'a quelque chose que tu voudrais me demander depuis longtemps ?" },
+      { level: 3, text: "C'est quoi un conseil que tu me donnerais pour ma vie ?" },
+      { level: 3, text: "Y'a quelque chose que t'as pas encore pardonné à quelqu'un ?" },
+      { level: 3, text: "C'est quoi ta plus grande peur dans une relation ?" },
+      { level: 3, text: "Est-ce qu'il y a une version de toi que les gens voient pas souvent ?" },
+      { level: 3, text: "C'est quoi quelque chose que tu voudrais me dire mais que t'as jamais dit ?" },
+      { level: 3, text: "Si tu pouvais changer une chose dans ta vie en ce moment, ce serait quoi ?" },
+      { level: 3, text: "C'est quoi ta définition personnelle du succès — vraiment, pas la réponse bateau ?" },
+    ],
+    perel: [
+      { level: 1, text: "Raconte-moi un moment de ton enfance où tu t'es senti vraiment seul." },
+      { level: 1, text: "Y'a une chose que tu as appris de tes parents sur l'amour — en bien ou en mal ?" },
+      { level: 1, text: "Quel adulte hors de ta famille a eu un impact fort sur toi ?" },
+      { level: 1, text: "C'est quoi une règle de ta famille d'origine que tu as gardée ? Et une que tu as rejetée ?" },
+      { level: 2, text: "Raconte-moi la dernière fois où tu t'es senti vraiment vu par quelqu'un." },
+      { level: 2, text: "C'est quoi quelque chose que tu as fait par amour que tu aurais jamais fait autrement ?" },
+      { level: 2, text: "Raconte un moment où tu aurais dû partir mais t'es resté — ou l'inverse." },
+      { level: 2, text: "C'est quoi ta plus grande déception dans une relation ?" },
+      { level: 2, text: "Qu'est-ce que t'aimerais que l'autre comprenne sur comment tu aimes ?" },
+      { level: 2, text: "Raconte-moi un moment où quelque chose s'est terminé et où tu savais que rien serait plus pareil." },
+      { level: 2, text: "Y'a un deuil que tu portes encore — pas forcément une mort ?" },
+      { level: 3, text: "C'est quoi quelque chose que tu as perdu et que tu cherches encore à retrouver ?" },
+      { level: 3, text: "Raconte un moment de ta vie où tu t'es réinventé." },
+      { level: 3, text: "C'est quoi quelque chose que tu veux vraiment mais que tu t'autorises pas encore à vouloir ?" },
+      { level: 3, text: "Raconte-moi le futur dont tu rêves — même si ça te semble impossible." },
+      { level: 3, text: "Y'a quelque chose que tu voudrais encore essayer avant de te considérer comme vraiment adulte ?" },
+      { level: 3, text: "C'est quoi l'histoire que tu voudrais qu'on raconte de toi ?" },
+      { level: 3, text: "Raconte-moi un souvenir qui t'a donné ta première idée de ce que l'amour était." },
+      { level: 3, text: "C'est quoi quelque chose que tu n'as jamais dit à voix haute ?" },
+    ],
+    and: [
+      { level: 1, text: "C'est quoi quelque chose que tu fais semblant de ne pas vouloir ?" },
+      { level: 1, text: "T'as une version de toi que les gens voient rarement ?" },
+      { level: 1, text: "C'est quoi ta définition personnelle du succès — vraiment, pas la réponse bateau ?" },
+      { level: 1, text: "Qu'est-ce qui te fait te sentir vivant ?" },
+      { level: 2, text: "C'est quoi quelque chose que tu n'as jamais dit à voix haute ?" },
+      { level: 2, text: "Y'a quelque chose que tu fais qui est en contradiction avec qui tu penses être ?" },
+      { level: 2, text: "C'est quoi la chose dont t'es le plus fier mais que tu parles jamais ?" },
+      { level: 2, text: "C'est quoi quelque chose que tu voudrais que les gens comprennent sur toi sans que t'aies à l'expliquer ?" },
+      { level: 2, text: "Y'a un moment où t'as laissé quelqu'un partir et que tu le regrettes ?" },
+      { level: 2, text: "C'est quoi la chose la plus courageuse que t'aies faite pour quelqu'un d'autre ?" },
+      { level: 2, text: "Est-ce que tu penses que les gens te voient vraiment ?" },
+      { level: 2, text: "C'est quoi quelque chose que tu donnes facilement mais que tu as du mal à recevoir ?" },
+      { level: 3, text: "T'as peur de quoi dans une relation intime ?" },
+      { level: 3, text: "Y'a quelque chose que tu aurais dû dire et que tu n'as jamais dit ?" },
+      { level: 3, text: "C'est quoi une décision que tu as prise qui a changé ta trajectoire — en bien ou en mal ?" },
+      { level: 3, text: "Qu'est-ce que tu dirais à la version de toi de 15 ans ?" },
+      { level: 3, text: "Si tu pouvais recommencer une chose, ce serait quoi ?" },
+      { level: 3, text: "Est-ce que tu t'aimes ?" },
+      { level: 3, text: "C'est quoi quelque chose que tu portes seul depuis trop longtemps ?" },
+    ],
+    deep: [
+      { level: 1, text: "C'est quoi ton truc coupable — la chose dont tu es un peu honteux d'aimer ?" },
+      { level: 1, text: "Si t'avais une heure supplémentaire dans chaque journée, tu ferais quoi ?" },
+      { level: 1, text: "C'est quoi le trait de caractère chez toi qui surprend les gens ?" },
+      { level: 1, text: "T'as un surnom ? D'où il vient ?" },
+      { level: 1, text: "C'est quoi un truc que tu fais mieux que la plupart des gens ?" },
+      { level: 1, text: "Si tu pouvais avoir une compétence instantanément, laquelle ?" },
+      { level: 2, text: "C'est quoi quelque chose que tu veux vraiment mais que tu as du mal à avouer ?" },
+      { level: 2, text: "Y'a un défi que tu t'es fixé récemment ? Pourquoi ce défi-là ?" },
+      { level: 2, text: "C'est quoi un truc que tu considères comme un deal-breaker dans une relation ?" },
+      { level: 2, text: "T'as déjà fait quelque chose que tout le monde désapprouvait mais que t'as aucun regret ?" },
+      { level: 2, text: "C'est quoi quelque chose que tu croyais fort à 20 ans et que tu vois différemment maintenant ?" },
+      { level: 2, text: "T'as une habitude que les gens trouvent bizarre mais qui te paraît totalement normale ?" },
+      { level: 2, text: "C'est quoi la chose qui te manque le plus de ton enfance ?" },
+      { level: 3, text: "C'est quoi ta plus grande peur dans une relation romantique ?" },
+      { level: 3, text: "Y'a quelque chose que tu regrettes de ne pas avoir dit à quelqu'un ?" },
+      { level: 3, text: "T'as déjà été vraiment brisé ? Comment tu t'en es remis ?" },
+      { level: 3, text: "C'est quoi la chose qui te rend le plus fier de qui tu es devenu ?" },
+      { level: 3, text: "Si tu pouvais changer quelque chose dans ta façon d'aimer, ce serait quoi ?" },
+      { level: 3, text: "Y'a une version de ta vie que tu n'as pas choisie mais qui t'attire encore ?" },
+      { level: 3, text: "C'est quoi quelque chose que tu n'as jamais dit à quelqu'un d'aussi direct que là ?" },
+      { level: 3, text: "Est-ce que tu es heureux en ce moment ? Vraiment ?" },
+    ],
+  };
+
+  const SOURCE_LABELS = {
+    aron: "36 Questions · Arthur Aron",
+    wnrs: "We're Not Really Strangers",
+    perel: "Where Should We Begin · Esther Perel",
+    and: "The And",
+    deep: "Let's Get Deep",
+    all: "Mix complet",
+  };
+
+  const LEVEL_LABELS = { 1: "Surface", 2: "Profond", 3: "Vulnérable" };
+
+  // ── STATE ──────────────────────────────────────────────────────────
+  let selectedSource = 'aron';
+  let selectedLevel = 1;
+  let sessionCards = [];
+  let currentIndex = 0;
+  let credOpen = false;
+
+  // ── SELECTION ──────────────────────────────────────────────────────
+  function selectSource(el) {
+    document.querySelectorAll('.source-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    selectedSource = el.dataset.source;
+  }
+
+  function selectLevel(el) {
+    document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    selectedLevel = el.dataset.level === 'all' ? 'all' : parseInt(el.dataset.level);
+  }
+
+  // ── SESSION ────────────────────────────────────────────────────────
+  function buildCards() {
+    let pool = [];
+    if (selectedSource === 'all') {
+      Object.values(QUESTIONS).forEach(arr => pool.push(...arr));
+    } else {
+      pool = [...QUESTIONS[selectedSource]];
+    }
+    if (selectedLevel !== 'all') {
+      pool = pool.filter(q => q.level === selectedLevel);
+    }
+    return shuffle(pool);
+  }
+
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function startSession() {
+    sessionCards = buildCards();
+    currentIndex = 0;
+    if (!sessionCards.length) return;
+    showScreen('card');
+    renderCard();
+  }
+
+  function restartShuffle() {
+    sessionCards = shuffle(sessionCards);
+    currentIndex = 0;
+    showScreen('card');
+    renderCard();
+  }
+
+  function goHome() {
+    showScreen('home');
+    closeCred();
+  }
+
+  // ── NAVIGATION ────────────────────────────────────────────────────
+  function nextCard() {
+    closeCred();
+    currentIndex++;
+    if (currentIndex >= sessionCards.length) {
+      showScreen('end');
+      return;
+    }
+    renderCard();
+  }
+
+  function prevCard() {
+    if (currentIndex === 0) return;
+    closeCred();
+    currentIndex--;
+    renderCard();
+  }
+
+  function renderCard() {
+    const q = sessionCards[currentIndex];
+    document.getElementById('card-question').textContent = q.text;
+    document.getElementById('card-level-tag').textContent = LEVEL_LABELS[q.level];
+    document.getElementById('meta-source').textContent = SOURCE_LABELS[selectedSource] === "Mix complet"
+      ? getSourceLabel(q)
+      : SOURCE_LABELS[selectedSource];
+    document.getElementById('meta-counter').textContent = `${currentIndex + 1} / ${sessionCards.length}`;
+    document.getElementById('back-btn').style.opacity = currentIndex === 0 ? '0.3' : '1';
+
+    const pct = ((currentIndex + 1) / sessionCards.length) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+
+    // Re-trigger animation
+    const card = document.getElementById('current-card');
+    card.style.animation = 'none';
+    card.offsetHeight;
+    card.style.animation = '';
+  }
+
+  function getSourceLabel(q) {
+    // Find which source this question belongs to
+    for (const [key, arr] of Object.entries(QUESTIONS)) {
+      if (arr.includes(q)) return SOURCE_LABELS[key];
+    }
+    return '';
+  }
+
+  // ── CRED PANEL ────────────────────────────────────────────────────
+  function toggleCred() {
+    credOpen = !credOpen;
+    document.getElementById('cred-panel').classList.toggle('open', credOpen);
+    document.getElementById('cred-icon').style.transform = credOpen ? 'rotate(180deg)' : '';
+  }
+
+  function closeCred() {
+    credOpen = false;
+    document.getElementById('cred-panel').classList.remove('open');
+    document.getElementById('cred-icon').style.transform = '';
+  }
+
+  // ── SCREENS ───────────────────────────────────────────────────────
+  function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById('screen-' + name).classList.remove('hidden');
+  }
+
+  // ── KEYBOARD ─────────────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    const card = !document.getElementById('screen-card').classList.contains('hidden');
+    if (!card) return;
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextCard(); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prevCard(); }
+  });
+</script>
+</body>
+</html>
